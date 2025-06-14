@@ -12,7 +12,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf-8'
 
 setup(
     name="sysmess",
-    version="0.1.0",
+    version="0.1.1",
     author="",
     author_email="",
     description="Fancy terminal message box renderer using Unicode box characters and ANSI styling",
