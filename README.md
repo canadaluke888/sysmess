@@ -5,9 +5,7 @@ Fancy terminal message box renderer using Unicode box characters and ANSI stylin
 ## Installation & Building
 
 ### Install Via PIP
-    ```bash
-    pip install sysmess
-    ```
+   - `pip install sysmess`
 
 - Build the extension in-place:
 
