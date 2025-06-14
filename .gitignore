@@ -1,0 +1,20 @@
+# Build artifacts
+build/
+dist/
+
+# Compiled object files and shared libraries
+*.o
+*.so
+
+# Python cache and metadata
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+
+# Environment
+.venv/
