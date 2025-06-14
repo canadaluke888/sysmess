@@ -58,17 +58,3 @@ python3 test.py
 
 A GitHub Actions workflow is included at `.github/workflows/ci.yml`, which builds the extension, runs the tests, and executes the examples on each push or pull request to `main`.
 
-## Publishing to PyPI
-
-To build source and wheel distributions:
-
-```bash
-python3 -m pip install --upgrade build twine
-python3 -m build
-```
-
-Then upload the packages to PyPI:
-
-```bash
-python3 -m twine upload dist/*
-```
