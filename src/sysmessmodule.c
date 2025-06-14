@@ -79,6 +79,31 @@ static int ds_append_n(DynamicString *ds, const char *s, size_t n) {
 #define ANSI_ITALIC "\x1b[3m"
 #define ANSI_RESET "\x1b[0m"
 
+static const char *
+get_ansi_color(const char *name)
+{
+    if (!name) {
+        return NULL;
+    }
+    if (strcmp(name, "black") == 0) return "\x1b[30m";
+    else if (strcmp(name, "red") == 0) return "\x1b[31m";
+    else if (strcmp(name, "green") == 0) return "\x1b[32m";
+    else if (strcmp(name, "yellow") == 0) return "\x1b[33m";
+    else if (strcmp(name, "blue") == 0) return "\x1b[34m";
+    else if (strcmp(name, "magenta") == 0) return "\x1b[35m";
+    else if (strcmp(name, "cyan") == 0) return "\x1b[36m";
+    else if (strcmp(name, "white") == 0) return "\x1b[37m";
+    else if (strcmp(name, "bright_black") == 0) return "\x1b[90m";
+    else if (strcmp(name, "bright_red") == 0) return "\x1b[91m";
+    else if (strcmp(name, "bright_green") == 0) return "\x1b[92m";
+    else if (strcmp(name, "bright_yellow") == 0) return "\x1b[93m";
+    else if (strcmp(name, "bright_blue") == 0) return "\x1b[94m";
+    else if (strcmp(name, "bright_magenta") == 0) return "\x1b[95m";
+    else if (strcmp(name, "bright_cyan") == 0) return "\x1b[96m";
+    else if (strcmp(name, "bright_white") == 0) return "\x1b[97m";
+    return NULL;
+}
+
 static PyObject *
 sysmess_measure_box_width(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -116,15 +141,40 @@ sysmess_measure_box_width(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"message", "title", "center", "bold", "italic", NULL};
+    static char *kwlist[] = {
+        "message", "title", "center", "bold", "italic",
+        "border_color", "title_color", "body_color", NULL
+    };
     PyObject *msg_obj;
     PyObject *title_obj = NULL;
     int center = 0, bold = 0, italic = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U|Uppp", kwlist,
-                                     &msg_obj, &title_obj,
-                                     &center, &bold, &italic)) {
+    const char *border_color = NULL, *title_color = NULL, *body_color = NULL;
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwargs, "U|Upppzzz", kwlist,
+            &msg_obj, &title_obj, &center, &bold, &italic,
+            &border_color, &title_color, &body_color)) {
         return NULL;
     }
+
+    const char *border_ansi = get_ansi_color(border_color);
+    if (border_color && !border_ansi) {
+        PyErr_Format(PyExc_ValueError,
+                     "Invalid border_color '%s'", border_color);
+        return NULL;
+    }
+    const char *title_ansi = get_ansi_color(title_color);
+    if (title_color && !title_ansi) {
+        PyErr_Format(PyExc_ValueError,
+                     "Invalid title_color '%s'", title_color);
+        return NULL;
+    }
+    const char *body_ansi = get_ansi_color(body_color);
+    if (body_color && !body_ansi) {
+        PyErr_Format(PyExc_ValueError,
+                     "Invalid body_color '%s'", body_color);
+        return NULL;
+    }
+
     PyObject *lines = PyObject_CallMethod(msg_obj, "splitlines", NULL);
     if (!lines) {
         return NULL;
@@ -150,17 +200,22 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_DECREF(lines);
         return PyErr_NoMemory();
     }
+    if (border_ansi) ds_append_str(&ds, border_ansi);
     ds_append_str(&ds, BOX_UL);
     ds_append_n(&ds, BOX_HOR, inner);
     ds_append_str(&ds, BOX_UR);
+    if (border_ansi) ds_append_str(&ds, ANSI_RESET);
     ds_append_str(&ds, "\n");
     if (title_obj) {
         const char *tutf = PyUnicode_AsUTF8(title_obj);
         Py_ssize_t tlen = PyUnicode_GetLength(title_obj);
+        if (border_ansi) ds_append_str(&ds, border_ansi);
         ds_append_str(&ds, BOX_VER);
+        if (border_ansi) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, " ");
         if (bold) ds_append_str(&ds, ANSI_BOLD);
         if (italic) ds_append_str(&ds, ANSI_ITALIC);
+        if (title_ansi) ds_append_str(&ds, title_ansi);
         if (center) {
             Py_ssize_t pad = maxlen - tlen;
             Py_ssize_t left = pad/2;
@@ -172,34 +227,45 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
             ds_append_str(&ds, tutf);
             for (Py_ssize_t i = 0; i < maxlen - tlen; i++) ds_append_str(&ds, " ");
         }
-        if (bold || italic) ds_append_str(&ds, ANSI_RESET);
+        if (bold || italic || title_ansi) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, " ");
+        if (border_ansi) ds_append_str(&ds, border_ansi);
         ds_append_str(&ds, BOX_VER);
+        if (border_ansi) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, "\n");
+        if (border_ansi) ds_append_str(&ds, border_ansi);
         ds_append_str(&ds, BOX_TSEP_L);
         ds_append_n(&ds, BOX_HOR, inner);
         ds_append_str(&ds, BOX_TSEP_R);
+        if (border_ansi) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, "\n");
     }
     for (Py_ssize_t i = 0; i < count; i++) {
         PyObject *line = PyList_GetItem(lines, i);
         const char *lutf = PyUnicode_AsUTF8(line);
         Py_ssize_t llen = PyUnicode_GetLength(line);
+        if (border_ansi) ds_append_str(&ds, border_ansi);
         ds_append_str(&ds, BOX_VER);
+        if (border_ansi) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, " ");
         if (bold) ds_append_str(&ds, ANSI_BOLD);
         if (italic) ds_append_str(&ds, ANSI_ITALIC);
+        if (body_ansi) ds_append_str(&ds, body_ansi);
         ds_append_str(&ds, lutf);
-        if (bold || italic) ds_append_str(&ds, ANSI_RESET);
+        if (bold || italic || body_ansi) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, " ");
         for (Py_ssize_t j = 0; j < maxlen - llen; j++) ds_append_str(&ds, " ");
+        if (border_ansi) ds_append_str(&ds, border_ansi);
         ds_append_str(&ds, BOX_VER);
+        if (border_ansi) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, "\n");
     }
     Py_DECREF(lines);
+    if (border_ansi) ds_append_str(&ds, border_ansi);
     ds_append_str(&ds, BOX_LL);
     ds_append_n(&ds, BOX_HOR, inner);
     ds_append_str(&ds, BOX_LR);
+    if (border_ansi) ds_append_str(&ds, ANSI_RESET);
     ds_append_str(&ds, "\n");
     PyObject *result = PyUnicode_DecodeUTF8(ds.buf, ds.len, NULL);
     ds_free(&ds);
@@ -213,8 +279,14 @@ static PyMethodDef SysmessMethods[] = {
                "Return the total width of the box including borders.")},
     {"fancy_box", (PyCFunction)sysmess_fancy_box,
      METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("fancy_box(message, title=None, center=False, bold=False, italic=False) -> str\n"
-               "Return a string with the message enclosed in a fancy box.")},
+     PyDoc_STR(
+         "fancy_box(message, title=None, center=False, bold=False, italic=False,"
+         " border_color=None, title_color=None, body_color=None) -> str\n"
+         "Return a string with the message enclosed in a fancy box. "
+         "Colors can be specified for the border, title and body using basic color names: "
+         "black, red, green, yellow, blue, magenta, cyan, white, bright_black, bright_red, "
+         "bright_green, bright_yellow, bright_blue, bright_magenta, bright_cyan, bright_white."
+     )},
     {NULL, NULL, 0, NULL}
 };
 

@@ -45,6 +45,16 @@ def main():
         italic=True
     ))
 
+    # Colored example
+    print(sysmess.fancy_box(
+        "This box has colored border, title, and body.",
+        title="Colored",
+        border_color="magenta",
+        title_color="cyan",
+        body_color="green",
+        bold=True
+    ))
+
     # Show measured width
     width = sysmess.measure_box_width(multiline, title="Multi-line")
     print(f"Measured box width: {width}")

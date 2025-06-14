@@ -47,6 +47,23 @@ width = sysmess.measure_box_width("Hello, world!", title="Greeting")
 print(width)
 ```
 
+You can also specify colors for the border, title, and body:
+
+```python
+msg = sysmess.fancy_box(
+    "Colored message",
+    title="Colorful",
+    border_color="magenta",
+    title_color="cyan",
+    body_color="yellow"
+)
+print(msg)
+```
+
+Supported color names: black, red, green, yellow, blue, magenta, cyan, white,
+bright_black, bright_red, bright_green, bright_yellow, bright_blue,
+bright_magenta, bright_cyan, bright_white.
+
 ## Examples
 
 Once built (or installed), run the demonstration script to see sample outputs:

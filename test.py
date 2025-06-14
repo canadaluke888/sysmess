@@ -40,6 +40,17 @@ class TestSysmess(unittest.TestCase):
         box = sysmess.fancy_box("X", title="T", center=True)
         self.assertIn("T", box.splitlines()[1])
 
+    def test_color_options(self):
+        out = sysmess.fancy_box("X", border_color="red")
+        self.assertIn('\x1b[31m', out)
+        self.assertIn('\x1b[0m', out)
+        out2 = sysmess.fancy_box("Y", title="T", title_color="green")
+        self.assertIn('\x1b[32m', out2)
+        out3 = sysmess.fancy_box("Z", body_color="blue")
+        self.assertIn('\x1b[34m', out3)
+        with self.assertRaises(ValueError):
+            sysmess.fancy_box("Z", border_color="invalid")
+
 if __name__ == '__main__':
     # Run tests in verbose mode to show each test name and status
     unittest.main(verbosity=2)
