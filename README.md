@@ -4,20 +4,29 @@ Fancy terminal message box renderer using Unicode box characters and ANSI stylin
 
 ## Installation & Building
 
-### Install Via PIP
-   - `pip install sysmess`
+  ### Install Via PIP (Recomended)
+    - `pip install sysmess`
 
-- Build the extension in-place:
+  ### Build From Source
+  - Clone the repository `git clone https://github.com/canadaluke888/sysmess.git`
 
-  ```bash
-  python3 setup.py build
-  ```
+  - Build the extension in-place:
 
-- (Optional) Install into your current environment:
+    ```bash
+    python3 setup.py build
+    ```
 
-  ```bash
-  pip install .
-  ```
+  - (Optional) Install into your current environment:
+  
+    - Create a virtual environment: `python3 -m venv .venv` (MacOS & Linux) | `python -m venv .venv` (Windows)
+
+    - Activate virtual environment: `source .venv/bin/activate` (MacOS & Linux) | `.venv/Scripts/Activate` (Windows)
+
+    - Install into current environment:
+
+        ```bash
+        pip install .
+        ```
 
 ## Usage
 
