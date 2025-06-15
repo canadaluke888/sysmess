@@ -78,5 +78,10 @@ def main():
 """
     print(sysmess.fancy_box(long_text, wrap=True, max_width=60))
 
+    # Blink examples
+    print(sysmess.fancy_box("Blinking border!", blink_border=True))
+    print(sysmess.fancy_box("Blinking title!", title="Hey", blink_title=True))
+    print(sysmess.fancy_box("Blinking body text!", blink_body=True))
+
 if __name__ == "__main__":
     main()

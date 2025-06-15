@@ -77,6 +77,19 @@ class TestSysmess(unittest.TestCase):
         finally:
             shutil.get_terminal_size = old
 
+    def test_blink_options(self):
+        out = sysmess.fancy_box("X", blink_border=True)
+        self.assertIn('\x1b[5m', out)
+        self.assertIn('\x1b[0m', out)
+        out2 = sysmess.fancy_box("Y", title="T", blink_title=True)
+        self.assertIn('\x1b[5m', out2)
+        out3 = sysmess.fancy_box("Z", blink_body=True)
+        self.assertIn('\x1b[5m', out3)
+        out4 = sysmess.fancy_box(
+            "W", blink_border=True, blink_title=True, blink_body=True
+        )
+        self.assertGreater(out4.count('\x1b[5m'), 1)
+
 if __name__ == '__main__':
     # Run tests in verbose mode to show each test name and status
     unittest.main(verbosity=2)

@@ -90,6 +90,20 @@ print(sysmess.fancy_box(long_text, wrap=True))
 print(sysmess.fancy_box(long_text, wrap=True, max_width=60))
 ```
 
+## Blink support
+
+You can make the border, title, or body text blink using the new blink flags:
+
+```python
+import sysmess
+print(sysmess.fancy_box("Blinking border!", blink_border=True))
+print(sysmess.fancy_box("Blinking title!", title="Hey", blink_title=True))
+print(sysmess.fancy_box("Blinking body text!", blink_body=True))
+```
+
+### Output
+![blink_example](assets/demo_video.mov)
+
 ## Examples
 
 Once built (or installed), run the demonstration script to see sample outputs:

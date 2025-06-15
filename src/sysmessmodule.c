@@ -81,6 +81,7 @@ static int ds_append_n(DynamicString *ds, const char *s, size_t n) {
 #define BOX_LR_ROUND "\xE2\x95\xAF"
 #define ANSI_BOLD "\x1b[1m"
 #define ANSI_ITALIC "\x1b[3m"
+#define ANSI_BLINK "\x1b[5m"
 #define ANSI_RESET "\x1b[0m"
 
 static const char *
@@ -147,19 +148,24 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
         "message", "title", "center", "bold", "italic", "style",
-        "border_color", "title_color", "body_color", "wrap", "max_width", NULL
+        "border_color", "title_color", "body_color",
+        "blink_border", "blink_title", "blink_body",
+        "wrap", "max_width", NULL
     };
     PyObject *msg_obj;
     PyObject *title_obj = NULL;
     int center = 0, bold = 0, italic = 0;
     const char *style_name = NULL;
     const char *border_color = NULL, *title_color = NULL, *body_color = NULL;
+    int blink_border = 0, blink_title = 0, blink_body = 0;
     int wrap = 0;
     Py_ssize_t max_width = 0;
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwargs, "U|Upppzzzzpn", kwlist,
+            args, kwargs, "U|Upppzzzzppppn", kwlist,
             &msg_obj, &title_obj, &center, &bold, &italic, &style_name,
-            &border_color, &title_color, &body_color, &wrap, &max_width)) {
+            &border_color, &title_color, &body_color,
+            &blink_border, &blink_title, &blink_body,
+            &wrap, &max_width)) {
         return NULL;
     }
 
@@ -257,20 +263,23 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *ll = round_corners ? BOX_LL_ROUND : BOX_LL;
     const char *lr = round_corners ? BOX_LR_ROUND : BOX_LR;
     if (border_ansi) ds_append_str(&ds, border_ansi);
+    if (blink_border) ds_append_str(&ds, ANSI_BLINK);
     ds_append_str(&ds, ul);
     ds_append_n(&ds, BOX_HOR, inner);
     ds_append_str(&ds, ur);
-    if (border_ansi) ds_append_str(&ds, ANSI_RESET);
+    if (border_ansi || blink_border) ds_append_str(&ds, ANSI_RESET);
     ds_append_str(&ds, "\n");
     if (title_obj) {
         const char *tutf = PyUnicode_AsUTF8(title_obj);
         Py_ssize_t tlen = PyUnicode_GetLength(title_obj);
         if (border_ansi) ds_append_str(&ds, border_ansi);
+        if (blink_border) ds_append_str(&ds, ANSI_BLINK);
         ds_append_str(&ds, BOX_VER);
-        if (border_ansi) ds_append_str(&ds, ANSI_RESET);
+        if (border_ansi || blink_border) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, " ");
         if (bold) ds_append_str(&ds, ANSI_BOLD);
         if (italic) ds_append_str(&ds, ANSI_ITALIC);
+        if (blink_title) ds_append_str(&ds, ANSI_BLINK);
         if (title_ansi) ds_append_str(&ds, title_ansi);
         if (center) {
             Py_ssize_t pad = maxlen - tlen;
@@ -283,17 +292,18 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
             ds_append_str(&ds, tutf);
             for (Py_ssize_t i = 0; i < maxlen - tlen; i++) ds_append_str(&ds, " ");
         }
-        if (bold || italic || title_ansi) ds_append_str(&ds, ANSI_RESET);
+        if (bold || italic || title_ansi || blink_title) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, " ");
         if (border_ansi) ds_append_str(&ds, border_ansi);
         ds_append_str(&ds, BOX_VER);
         if (border_ansi) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, "\n");
         if (border_ansi) ds_append_str(&ds, border_ansi);
+        if (blink_border) ds_append_str(&ds, ANSI_BLINK);
         ds_append_str(&ds, BOX_TSEP_L);
         ds_append_n(&ds, BOX_HOR, inner);
         ds_append_str(&ds, BOX_TSEP_R);
-        if (border_ansi) ds_append_str(&ds, ANSI_RESET);
+        if (border_ansi || blink_border) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, "\n");
     }
     for (Py_ssize_t i = 0; i < count; i++) {
@@ -301,14 +311,16 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
         const char *lutf = PyUnicode_AsUTF8(line);
         Py_ssize_t llen = PyUnicode_GetLength(line);
         if (border_ansi) ds_append_str(&ds, border_ansi);
+        if (blink_border) ds_append_str(&ds, ANSI_BLINK);
         ds_append_str(&ds, BOX_VER);
-        if (border_ansi) ds_append_str(&ds, ANSI_RESET);
+        if (border_ansi || blink_border) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, " ");
         if (bold) ds_append_str(&ds, ANSI_BOLD);
         if (italic) ds_append_str(&ds, ANSI_ITALIC);
+        if (blink_body) ds_append_str(&ds, ANSI_BLINK);
         if (body_ansi) ds_append_str(&ds, body_ansi);
         ds_append_str(&ds, lutf);
-        if (bold || italic || body_ansi) ds_append_str(&ds, ANSI_RESET);
+        if (bold || italic || body_ansi || blink_body) ds_append_str(&ds, ANSI_RESET);
         ds_append_str(&ds, " ");
         for (Py_ssize_t j = 0; j < maxlen - llen; j++) ds_append_str(&ds, " ");
         if (border_ansi) ds_append_str(&ds, border_ansi);
@@ -318,10 +330,11 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     Py_DECREF(lines);
     if (border_ansi) ds_append_str(&ds, border_ansi);
+    if (blink_border) ds_append_str(&ds, ANSI_BLINK);
     ds_append_str(&ds, ll);
     ds_append_n(&ds, BOX_HOR, inner);
     ds_append_str(&ds, lr);
-    if (border_ansi) ds_append_str(&ds, ANSI_RESET);
+    if (border_ansi || blink_border) ds_append_str(&ds, ANSI_RESET);
     ds_append_str(&ds, "\n");
     PyObject *result = PyUnicode_DecodeUTF8(ds.buf, ds.len, NULL);
     ds_free(&ds);
@@ -338,14 +351,16 @@ static PyMethodDef SysmessMethods[] = {
      PyDoc_STR(
          "fancy_box(message, title=None, center=False, bold=False, italic=False,"
          " style=None, border_color=None, title_color=None, body_color=None,"
+         " blink_border=False, blink_title=False, blink_body=False,"
          " wrap=False, max_width=None) -> str\n"
          "Return a string with the message enclosed in a fancy box. "
          "Optionally specify style='round' for rounded corners. "
+         "Set blink_border/title/body to True to blink the border, title, or body text. "
          "Set wrap=True to word-wrap text to terminal width or use max_width for a fixed width. "
          "Colors can be specified for the border, title and body using basic color names: "
          "black, red, green, yellow, blue, magenta, cyan, white, bright_black, bright_red, "
          "bright_green, bright_yellow, bright_blue, bright_magenta, bright_cyan, bright_white."
-     )},
+    )},
     {NULL, NULL, 0, NULL}
 };
 
