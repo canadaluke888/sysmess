@@ -82,6 +82,10 @@ Once built (or installed), run the demonstration script to see sample outputs:
 python3 examples.py
 ```
 
+## Ouput
+
+![sysmess_demo](assets/test_output.png)
+
 ## Testing
 
 Run the unit tests using the included test runner:
@@ -89,8 +93,3 @@ Run the unit tests using the included test runner:
 ```bash
 python3 test.py
 ```
-
-## Continuous Integration
-
-A GitHub Actions workflow is included at `.github/workflows/ci.yml`, which builds the extension, runs the tests, and executes the examples on each push or pull request to `main`.
-
