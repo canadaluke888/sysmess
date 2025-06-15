@@ -58,6 +58,25 @@ class TestSysmess(unittest.TestCase):
         with self.assertRaises(ValueError):
             sysmess.fancy_box("X", style="invalid")
 
+    def test_wrap_max_width(self):
+        text = "one two three four five six seven eight nine ten"
+        box = sysmess.fancy_box(text, wrap=True, max_width=20)
+        lines = box.splitlines()
+        self.assertTrue(all(len(l) <= 20 for l in lines))
+        self.assertTrue(len(lines) > 5)
+
+    def test_wrap_terminal(self):
+        import shutil, os
+        text = "one two three four five six seven eight nine ten"
+        old = shutil.get_terminal_size
+        shutil.get_terminal_size = lambda: os.terminal_size((20, 0))
+        try:
+            box = sysmess.fancy_box(text, wrap=True)
+            lines = box.splitlines()
+            self.assertTrue(all(len(l) <= 20 for l in lines))
+        finally:
+            shutil.get_terminal_size = old
+
 if __name__ == '__main__':
     # Run tests in verbose mode to show each test name and status
     unittest.main(verbosity=2)

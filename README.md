@@ -78,6 +78,18 @@ Supported color names: black, red, green, yellow, blue, magenta, cyan, white,
 bright_black, bright_red, bright_green, bright_yellow, bright_blue,
 bright_magenta, bright_cyan, bright_white.
 
+## Word wrap & max width
+
+By passing `wrap=True`, sysmess will wrap your message text to fit your terminal width (or a specific maximum width via `max_width`):
+
+```python
+import sysmess
+long_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit..."
+print(sysmess.fancy_box(long_text, wrap=True))
+# Or specify a fixed max width:
+print(sysmess.fancy_box(long_text, wrap=True, max_width=60))
+```
+
 ## Examples
 
 Once built (or installed), run the demonstration script to see sample outputs:

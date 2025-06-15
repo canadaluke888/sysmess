@@ -147,17 +147,19 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
         "message", "title", "center", "bold", "italic", "style",
-        "border_color", "title_color", "body_color", NULL
+        "border_color", "title_color", "body_color", "wrap", "max_width", NULL
     };
     PyObject *msg_obj;
     PyObject *title_obj = NULL;
     int center = 0, bold = 0, italic = 0;
     const char *style_name = NULL;
     const char *border_color = NULL, *title_color = NULL, *body_color = NULL;
+    int wrap = 0;
+    Py_ssize_t max_width = 0;
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwargs, "U|Upppzzzz", kwlist,
+            args, kwargs, "U|Upppzzzzpn", kwlist,
             &msg_obj, &title_obj, &center, &bold, &italic, &style_name,
-            &border_color, &title_color, &body_color)) {
+            &border_color, &title_color, &body_color, &wrap, &max_width)) {
         return NULL;
     }
 
@@ -189,8 +191,43 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
             return NULL;
         }
     }
-
-    PyObject *lines = PyObject_CallMethod(msg_obj, "splitlines", NULL);
+    PyObject *lines;
+    if (wrap || max_width > 0) {
+        Py_ssize_t term_width;
+        if (max_width > 0) {
+            term_width = max_width;
+        } else {
+            PyObject *shutil_mod = PyImport_ImportModule("shutil");
+            if (!shutil_mod) return NULL;
+            PyObject *ts = PyObject_CallMethod(shutil_mod, "get_terminal_size", NULL);
+            Py_DECREF(shutil_mod);
+            if (!ts) return NULL;
+            PyObject *col = PyObject_GetAttrString(ts, "columns");
+            Py_DECREF(ts);
+            if (!col) return NULL;
+            term_width = PyLong_AsSsize_t(col);
+            Py_DECREF(col);
+            if (PyErr_Occurred()) return NULL;
+        }
+        Py_ssize_t content_width = term_width - 4;
+        if (content_width < 1) {
+            PyErr_SetString(PyExc_ValueError, "max_width too small");
+            return NULL;
+        }
+        PyObject *textwrap = PyImport_ImportModule("textwrap");
+        if (!textwrap) return NULL;
+        PyObject *wrap_fn = PyObject_GetAttrString(textwrap, "wrap");
+        Py_DECREF(textwrap);
+        if (!wrap_fn) return NULL;
+        PyObject *args2 = PyTuple_Pack(2, msg_obj, PyLong_FromSsize_t(content_width));
+        PyObject *lines_list = PyObject_CallObject(wrap_fn, args2);
+        Py_DECREF(wrap_fn);
+        Py_DECREF(args2);
+        if (!lines_list) return NULL;
+        lines = lines_list;
+    } else {
+        lines = PyObject_CallMethod(msg_obj, "splitlines", NULL);
+    }
     if (!lines) {
         return NULL;
     }
@@ -300,9 +337,11 @@ static PyMethodDef SysmessMethods[] = {
      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR(
          "fancy_box(message, title=None, center=False, bold=False, italic=False,"
-         " style=None, border_color=None, title_color=None, body_color=None) -> str\n"
+         " style=None, border_color=None, title_color=None, body_color=None,"
+         " wrap=False, max_width=None) -> str\n"
          "Return a string with the message enclosed in a fancy box. "
          "Optionally specify style='round' for rounded corners. "
+         "Set wrap=True to word-wrap text to terminal width or use max_width for a fixed width. "
          "Colors can be specified for the border, title and body using basic color names: "
          "black, red, green, yellow, blue, magenta, cyan, white, bright_black, bright_red, "
          "bright_green, bright_yellow, bright_blue, bright_magenta, bright_cyan, bright_white."
