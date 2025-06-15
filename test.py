@@ -50,6 +50,13 @@ class TestSysmess(unittest.TestCase):
         self.assertIn('\x1b[34m', out3)
         with self.assertRaises(ValueError):
             sysmess.fancy_box("Z", border_color="invalid")
+        # style parameter for rounded corners
+        box = sysmess.fancy_box("X", style="round")
+        lines = box.splitlines()
+        self.assertTrue(lines[0].startswith('╭'))
+        self.assertTrue(lines[-1].startswith('╰'))
+        with self.assertRaises(ValueError):
+            sysmess.fancy_box("X", style="invalid")
 
 if __name__ == '__main__':
     # Run tests in verbose mode to show each test name and status

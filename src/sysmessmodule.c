@@ -75,6 +75,10 @@ static int ds_append_n(DynamicString *ds, const char *s, size_t n) {
 #define BOX_VER "\xE2\x94\x82"
 #define BOX_TSEP_L "\xE2\x94\x9C"
 #define BOX_TSEP_R "\xE2\x94\xA4"
+#define BOX_UL_ROUND "\xE2\x95\xAD"
+#define BOX_UR_ROUND "\xE2\x95\xAE"
+#define BOX_LL_ROUND "\xE2\x95\xB0"
+#define BOX_LR_ROUND "\xE2\x95\xAF"
 #define ANSI_BOLD "\x1b[1m"
 #define ANSI_ITALIC "\x1b[3m"
 #define ANSI_RESET "\x1b[0m"
@@ -142,16 +146,17 @@ static PyObject *
 sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {
-        "message", "title", "center", "bold", "italic",
+        "message", "title", "center", "bold", "italic", "style",
         "border_color", "title_color", "body_color", NULL
     };
     PyObject *msg_obj;
     PyObject *title_obj = NULL;
     int center = 0, bold = 0, italic = 0;
+    const char *style_name = NULL;
     const char *border_color = NULL, *title_color = NULL, *body_color = NULL;
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwargs, "U|Upppzzz", kwlist,
-            &msg_obj, &title_obj, &center, &bold, &italic,
+            args, kwargs, "U|Upppzzzz", kwlist,
+            &msg_obj, &title_obj, &center, &bold, &italic, &style_name,
             &border_color, &title_color, &body_color)) {
         return NULL;
     }
@@ -173,6 +178,16 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_Format(PyExc_ValueError,
                      "Invalid body_color '%s'", body_color);
         return NULL;
+    }
+    int round_corners = 0;
+    if (style_name) {
+        if (strcmp(style_name, "round") == 0) {
+            round_corners = 1;
+        } else {
+            PyErr_Format(PyExc_ValueError,
+                         "Invalid style '%s'", style_name);
+            return NULL;
+        }
     }
 
     PyObject *lines = PyObject_CallMethod(msg_obj, "splitlines", NULL);
@@ -200,10 +215,14 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_DECREF(lines);
         return PyErr_NoMemory();
     }
+    const char *ul = round_corners ? BOX_UL_ROUND : BOX_UL;
+    const char *ur = round_corners ? BOX_UR_ROUND : BOX_UR;
+    const char *ll = round_corners ? BOX_LL_ROUND : BOX_LL;
+    const char *lr = round_corners ? BOX_LR_ROUND : BOX_LR;
     if (border_ansi) ds_append_str(&ds, border_ansi);
-    ds_append_str(&ds, BOX_UL);
+    ds_append_str(&ds, ul);
     ds_append_n(&ds, BOX_HOR, inner);
-    ds_append_str(&ds, BOX_UR);
+    ds_append_str(&ds, ur);
     if (border_ansi) ds_append_str(&ds, ANSI_RESET);
     ds_append_str(&ds, "\n");
     if (title_obj) {
@@ -262,9 +281,9 @@ sysmess_fancy_box(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     Py_DECREF(lines);
     if (border_ansi) ds_append_str(&ds, border_ansi);
-    ds_append_str(&ds, BOX_LL);
+    ds_append_str(&ds, ll);
     ds_append_n(&ds, BOX_HOR, inner);
-    ds_append_str(&ds, BOX_LR);
+    ds_append_str(&ds, lr);
     if (border_ansi) ds_append_str(&ds, ANSI_RESET);
     ds_append_str(&ds, "\n");
     PyObject *result = PyUnicode_DecodeUTF8(ds.buf, ds.len, NULL);
@@ -281,8 +300,9 @@ static PyMethodDef SysmessMethods[] = {
      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR(
          "fancy_box(message, title=None, center=False, bold=False, italic=False,"
-         " border_color=None, title_color=None, body_color=None) -> str\n"
+         " style=None, border_color=None, title_color=None, body_color=None) -> str\n"
          "Return a string with the message enclosed in a fancy box. "
+         "Optionally specify style='round' for rounded corners. "
          "Colors can be specified for the border, title and body using basic color names: "
          "black, red, green, yellow, blue, magenta, cyan, white, bright_black, bright_red, "
          "bright_green, bright_yellow, bright_blue, bright_magenta, bright_cyan, bright_white."

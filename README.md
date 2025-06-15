@@ -47,6 +47,16 @@ width = sysmess.measure_box_width("Hello, world!", title="Greeting")
 print(width)
 ```
 
+# Use the "round" style for rounded corners
+```python
+msg = sysmess.fancy_box(
+    "Rounded corners!",
+    title="Round",
+    style="round"
+)
+print(msg)
+```
+
 You can also specify colors for the border, title, and body:
 
 ```python

@@ -55,6 +55,13 @@ def main():
         bold=True
     ))
 
+    # Rounded corners
+    print(sysmess.fancy_box(
+        "Rounded corners!",
+        title="Round",
+        style="round"
+    ))
+
     # Show measured width
     width = sysmess.measure_box_width(multiline, title="Multi-line")
     print(f"Measured box width: {width}")
