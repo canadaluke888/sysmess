@@ -2,10 +2,14 @@
 
 Fancy terminal message box renderer using Unicode box characters and ANSI styling.
 
+Uses a dynamic string buffer for quick and snappy message rendering.
+
 ## Installation & Building
 
   ### Install Via PIP (Recomended)
-    - `pip install sysmess`
+  ```bash
+  pip install sysmess
+  ```
 
   ### Build From Source
   - Clone the repository `git clone https://github.com/canadaluke888/sysmess.git`
