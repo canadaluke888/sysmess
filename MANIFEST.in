@@ -1,2 +1,3 @@
 include sysmess.pyi
-include assets/test_output.png
+include assets/test_output_basic_boxes.png
+include assets/test_output_word_wrap.png
