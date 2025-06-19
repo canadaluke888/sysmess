@@ -124,6 +124,10 @@ Once built (or installed), run the demonstration script to see sample outputs:
 python3 examples.py
 ```
 
+## Output
+
+![sysmes_demo](assets/test_output_basic_boxes.png)
+
 ## Testing
 
 Run the unit tests using the included test runner:
